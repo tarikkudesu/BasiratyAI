@@ -1,0 +1,19 @@
+services:
+  ai:
+    image: ai:tar
+    build:
+      context: ./AI
+    container_name: ai
+    restart: unless-stopped
+    env_file:
+      - ./AI/.env
+    ports:
+      - target: 7417
+        published: 7417
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    name: internal_network
+    driver: bridge
