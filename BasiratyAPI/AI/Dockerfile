@@ -13,12 +13,8 @@ ENV APP_HOME=/home/app/web
 WORKDIR $APP_HOME
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends --fix-missing \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    || (apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
-    libglib2.0-0) \
+    apt-get install -y --no-install-recommends --fix-missing libgl1-mesa-glx libglib2.0-0 \
+    || (apt-get update && apt-get install -y --no-install-recommends libgl1-mesa-glx libglib2.0-0) \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/src/app/wheels /wheels
 RUN pip install --no-cache /wheels/*
