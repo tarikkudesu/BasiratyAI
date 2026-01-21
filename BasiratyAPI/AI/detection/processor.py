@@ -32,6 +32,7 @@ def process_detections(results, image_width: int, image_height: int) -> Optional
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
             box_center_x = (x1 + x2) / 2
             box_height = y2 - y1
+            box_width = x2 - x1
 
             if not is_in_safe_zone(x1, x2, image_width):
                 continue
@@ -39,7 +40,7 @@ def process_detections(results, image_width: int, image_height: int) -> Optional
             distance = calculate_distance(box_height, image_height)
             position = calculate_position(box_center_x, image_width)
             label = MONITORED_CLASSES[class_id]
-            distance_meters = estimate_distance_meters(box_height, image_height, label)
+            distance_meters = estimate_distance_meters(box_height, image_height, label, box_width, image_width)
 
             # Threat scoring: closer objects are more dangerous
             threat_score = confidence
