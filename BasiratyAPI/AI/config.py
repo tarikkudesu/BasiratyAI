@@ -57,6 +57,7 @@ TYPICAL_HEIGHTS = {
     "potted plant": 0.5,
     "bed": 0.6,
     "dining table": 0.75,
+    "wall": 2.5,
 }
 
 # Safe Zone Algorithm thresholds
@@ -67,3 +68,11 @@ APPROACHING_RATIO = 0.2
 # YOLO configuration
 TARGET_IMAGE_SIZE = 640
 CONFIDENCE_THRESHOLD = 0.25
+
+# Wall detection thresholds
+WALL_MIN_HEIGHT_RATIO = 0.5
+WALL_MIN_WIDTH_RATIO = 0.15
+WALL_EDGE_DENSITY_THRESHOLD = 0.02
+
+# Distance priority for threat comparison
+DISTANCE_PRIORITY = {"immediate": 3, "approaching": 2, "far": 1}

@@ -8,9 +8,9 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from config import CONFIDENCE_THRESHOLD
+from config import CONFIDENCE_THRESHOLD, DISTANCE_PRIORITY
 from core import get_model
-from detection import process_detections
+from detection import process_detections, detect_wall
 from utils.image import resize_image
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,14 @@ async def run_inference(image: np.ndarray) -> Dict:
         results = await loop.run_in_executor(None, lambda: model(resized_image, conf=CONFIDENCE_THRESHOLD, verbose=False))
 
         critical_obstacle = process_detections(results, image_width, image_height)
+
+        # Check for walls and compare priority
+        wall_obstacle = detect_wall(resized_image)
+        if wall_obstacle:
+            if critical_obstacle is None:
+                critical_obstacle = wall_obstacle
+            elif DISTANCE_PRIORITY.get(wall_obstacle["distance"], 0) > DISTANCE_PRIORITY.get(critical_obstacle["distance"], 0):
+                critical_obstacle = wall_obstacle
 
         return generate_navigation_response(critical_obstacle)
 
