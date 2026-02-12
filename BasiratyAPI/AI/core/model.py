@@ -13,8 +13,8 @@ from ultralytics import YOLO
 
 logger = logging.getLogger(__name__)
 
-# Global model instance
-_model: Optional[YOLO] = None
+# Global path detection model
+_path_model: Optional[YOLO] = None
 
 # Patch torch.load for ultralytics compatibility
 _original_torch_load = torch.load
@@ -43,15 +43,15 @@ except Exception:
     pass
 
 
-def load_yolo_model(model_path: str = "yolov8n.pt") -> YOLO:
-    """Load YOLOv8 model and cache globally"""
-    global _model
-    logger.info(f"Loading YOLO model: {model_path}")
-    _model = YOLO(model_path)
-    logger.info("✓ Model loaded successfully")
-    return _model
+def load_path_model(model_path: str = "best.pt") -> YOLO:
+    """Load path detection model and cache globally"""
+    global _path_model
+    logger.info(f"Loading path detection model: {model_path}")
+    _path_model = YOLO(model_path)
+    logger.info("✓ Path detection model loaded successfully")
+    return _path_model
 
 
-def get_model() -> Optional[YOLO]:
-    """Get the cached YOLO model instance"""
-    return _model
+def get_path_model() -> Optional[YOLO]:
+    """Get the cached path detection model instance"""
+    return _path_model

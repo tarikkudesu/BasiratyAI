@@ -8,68 +8,68 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from config import CONFIDENCE_THRESHOLD, DISTANCE_PRIORITY
-from core import get_model
-from detection import process_detections, detect_wall
+from detection import analyze_path
 from utils.image import resize_image
 
 logger = logging.getLogger(__name__)
 
 
-def generate_navigation_response(obstacle: Optional[Dict]) -> Dict:
-    """Generate navigation JSON response with voice feedback"""
-    if obstacle is None:
+def generate_navigation_response(path_analysis: Optional[Dict]) -> Dict:
+    """
+    Generate navigation response based on path detection only.
+    
+    Decision logic:
+    - Path available and safe -> PROCEED
+    - No path detected -> STOP
+    """
+    if path_analysis is None:
+        logger.error("Path analysis unavailable")
         return {
-            "status": "CLEAR",
-            "voice_feedback": "Path is clear. Safe to proceed.",
-            "obstacle": None,
+            "status": "STOP",
+            "voice_feedback": "Unable to detect path. Please try again.",
         }
-
-    if obstacle["distance"] == "immediate":
-        status, action = "STOP", "Stop"
-    elif obstacle["distance"] == "approaching":
-        status, action = "WARNING", "Caution"
+    
+    path_available = path_analysis.get("path_available", False)
+    path_confidence = path_analysis.get("confidence", 0.0)
+    path_reason = path_analysis.get("reason", "Unknown")
+    
+    if not path_available:
+        return {
+            "status": "STOP",
+            "voice_feedback": f"Stop. {path_reason}.",
+            "path": path_analysis,
+        }
+    
+    # Path is available
+    if path_confidence > 0.8:
+        feedback = "Safe to proceed. Clear path ahead."
+    elif path_confidence > 0.6:
+        feedback = f"Proceed with caution. {path_reason}."
     else:
-        status, action = "CLEAR", "Aware"
-
-    label = obstacle["label"].title()
-    position = obstacle["position"]
-    meters = obstacle["distance_meters"]
-
-    if obstacle["distance"] == "immediate":
-        voice_feedback = f"{action}. {label} {meters} meters ahead."
-    else:
-        voice_feedback = f"{action}. {label} {meters} meters on the {position}."
-
-    return {"status": status, "voice_feedback": voice_feedback, "obstacle": obstacle}
+        feedback = f"Uncertain path. {path_reason}."
+    
+    return {
+        "status": "PROCEED",
+        "voice_feedback": feedback,
+        "path": path_analysis,
+    }
 
 
 async def run_inference(image: np.ndarray) -> Dict:
-    """Run YOLOv8 inference and generate navigation response"""
+    """Run path detection inference and generate navigation response"""
     try:
         resized_image = resize_image(image)
-        image_height, image_width = resized_image.shape[:2]
 
-        model = get_model()
+        # Analyze path using the path detection model
         loop = asyncio.get_event_loop()
-        results = await loop.run_in_executor(None, lambda: model(resized_image, conf=CONFIDENCE_THRESHOLD, verbose=False))
-
-        critical_obstacle = process_detections(results, image_width, image_height)
-
-        # Check for walls and compare priority
-        wall_obstacle = detect_wall(resized_image)
-        if wall_obstacle:
-            if critical_obstacle is None:
-                critical_obstacle = wall_obstacle
-            elif DISTANCE_PRIORITY.get(wall_obstacle["distance"], 0) > DISTANCE_PRIORITY.get(critical_obstacle["distance"], 0):
-                critical_obstacle = wall_obstacle
-
-        return generate_navigation_response(critical_obstacle)
+        path_analysis = await loop.run_in_executor(None, lambda: analyze_path(resized_image))
+        
+        # Generate response based on path detection only
+        return generate_navigation_response(path_analysis)
 
     except Exception as e:
         logger.error(f"Inference error: {e}")
         return {
             "status": "ERROR",
             "voice_feedback": "System error. Please reconnect.",
-            "obstacle": None,
         }

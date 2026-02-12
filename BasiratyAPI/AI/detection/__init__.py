@@ -1,4 +1,3 @@
-from .processor import process_detections
-from .wall import detect_wall
+from .path import analyze_path
 
-__all__ = ["process_detections", "detect_wall"]
+__all__ = ["analyze_path"]
