@@ -13,6 +13,10 @@ all: up
 up:
 	@echo -n "" >> ./AI/.env
 	@docker compose -f $(COMPOSEFILE) $@ --build -d
+	@echo "Generating cloudflare link"
+	@echo $(SE)
+	@sleep 5 && docker logs ai 2>&1 | grep ".trycloudflare.com"
+	@echo $(SE)
 down:
 	@docker compose -f $(COMPOSEFILE) $@
 build:
